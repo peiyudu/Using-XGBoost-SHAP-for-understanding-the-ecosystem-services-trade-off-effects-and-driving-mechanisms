@@ -1,0 +1,93 @@
+[aa,R]=geotiffread('E:\test\NDVI\2001year_mean.tif');
+info=geotiffinfo('E:\test\NDVI\2001year_mean.tif');
+project=info.GeoTIFFTags.GeoKeyDirectoryTag;
+[m,n]=size(aa);
+begin_year=2001;
+end_year=2020;
+cd=end_year-begin_year+1;
+ndvisum=zeros(m*n,cd);k=1;
+lujin_ndvi=['E:\test\NDVI\'];
+for year=begin_year:end_year
+    filename=[lujin_ndvi,int2str(year),'year_mean.tif'];
+    ndvi=importdata(filename);
+    ndvisum(:,k)=reshape(ndvi,[],1);
+    k=k+1;
+end
+lujin_rad=['E:\test\rad\'];
+radsum=zeros(m*n,cd);
+k=1;
+for year=begin_year:end_year
+    filename=[lujin_rad,int2str(year),'year_mean.tif'];
+    ndvi=importdata(filename);
+    radsum(:,k)=reshape(ndvi,[],1);
+    k=k+1;
+end
+lujin_pre='E:\test\pre\';
+presum=zeros(m*n,cd);
+k=1;
+for year=begin_year:end_year
+    filename=[lujin_pre,int2str(year),'year_mean.tif'];
+    ndvi=importdata(filename);
+    presum(:,k)=reshape(ndvi,[],1);
+    k=k+1;
+end
+lujin_temp='E:\test\tem\';
+tempsum=zeros(m*n,cd);
+k=1;
+for year=begin_year:end_year
+    filename=[lujin_temp,int2str(year),'year_mean.tif'];
+    ndvi=importdata(filename);
+    tempsum(:,k)=reshape(ndvi,[],1);
+    k=k+1;
+end
+ndvi_pre_temp_rad_sum=zeros(m,n)+nan;
+ndvi_pre_temp_rad_sum_t=zeros(m,n)+nan;
+ndvi_temp_rad_pre_sum=zeros(m,n)+nan;
+ndvi_temp_rad_pre_sum_t=zeros(m,n)+nan;
+ndvi_rad_temp_pre_sum=zeros(m,n)+nan;
+ndvi_rad_temp_pre_sum_t=zeros(m,n)+nan;
+for i=1:m*n
+    ndvi=ndvisum(i,:)';
+    pre=presum(i,:)';
+    temp=tempsum(i,:)';
+    rad=radsum(i,:)';
+    if length(find(~isnan(ndvi)))==cd && length(find(~isnan(pre) & pre>=0))==cd && length(find(~isnan(temp) & temp>-100))==cd && length(find(~isnan(rad) & rad>=0))==cd
+        [ndvi_pre_temp_rad,~]=partialcorr(ndvi,pre,[temp,rad]);%ע ⣬   Ƶı      ں   []
+        ndvi_pre_temp_rad_sum(i)=ndvi_pre_temp_rad;
+        t1=((cd-2-2).^0.5*ndvi_pre_temp_rad)./(1-ndvi_pre_temp_rad.^2).^0.5;
+        ndvi_pre_temp_rad_sum_t(i)=t1;
+        [ndvi_rad_temp_pre,~]=partialcorr(ndvi,rad,[temp,pre]);%ע ⣬   Ƶı      ں   []
+        ndvi_rad_temp_pre_sum(i)=ndvi_rad_temp_pre;
+        t2=((cd-2-2).^0.5*ndvi_rad_temp_pre)./(1-ndvi_rad_temp_pre.^2).^0.5;
+        ndvi_rad_temp_pre_sum_t(i)=t2;
+        [ndvi_temp_rad_pre,~]=partialcorr(ndvi,temp,[rad,pre]);%ע ⣬   Ƶı      ں   []
+        ndvi_temp_rad_pre_sum(i)=ndvi_temp_rad_pre;
+        t3=((cd-2-2).^0.5*ndvi_temp_rad_pre)./(1-ndvi_temp_rad_pre.^2).^0.5;
+        ndvi_temp_rad_pre_sum_t(i)=t3;
+    end
+end
+tz=tinv(0.95,cd-2-2);%T      ٽ ֵ       pֵ    1-0.95=0.05
+result=['E:\test\result\']; %   ·  
+filename=[result,'ndvi_pre_temp_rad_rֵ.tif'];
+geotiffwrite(filename,ndvi_pre_temp_rad_sum,R,'GeoKeyDirectoryTag',info.GeoTIFFTags.GeoKeyDirectoryTag);
+filename=[result,'ndvi_pre_temp_rad_tֵ.tif'];
+geotiffwrite(filename,ndvi_pre_temp_rad_sum_t,R,'GeoKeyDirectoryTag',info.GeoTIFFTags.GeoKeyDirectoryTag);
+ndvi_pre_temp_rad_vv1_sum(abs(ndvi_pre_temp_rad_sum_t)<tz)=NaN;
+filename=[result,'ͨ  T    ndvi_pre_temp_rad.tif'];
+geotiffwrite(filename,ndvi_pre_temp_rad_sum,R,'GeoKeyDirectoryTag',info.GeoTIFFTags.GeoKeyDirectoryTag);
+
+filename=[result,'ndvi_rad_temp_pre_rֵ.tif'];
+geotiffwrite(filename,ndvi_rad_temp_pre_sum,R,'GeoKeyDirectoryTag',info.GeoTIFFTags.GeoKeyDirectoryTag);
+filename=[result,'ndvi_rad_temp_pre_tֵ.tif'];
+geotiffwrite(filename,ndvi_rad_temp_pre_sum_t,R,'GeoKeyDirectoryTag',info.GeoTIFFTags.GeoKeyDirectoryTag);
+ndvi_rad_temp_pre_vv1_sum(abs(ndvi_rad_temp_pre_sum_t)<tz)=NaN;
+filename=[result,'ͨ  T    ndvi_rad_temp_pre.tif'];
+geotiffwrite(filename,ndvi_rad_temp_pre_sum,R,'GeoKeyDirectoryTag',info.GeoTIFFTags.GeoKeyDirectoryTag);
+
+filename=[result,'ndvi_temp_rad_pre_rֵ.tif'];
+geotiffwrite(filename,ndvi_temp_rad_pre_sum,R,'GeoKeyDirectoryTag',info.GeoTIFFTags.GeoKeyDirectoryTag);
+filename=[result,'ndvi_temp_rad_pre_vv1_tֵ.tif'];
+geotiffwrite(filename,ndvi_temp_rad_pre_sum_t,R,'GeoKeyDirectoryTag',info.GeoTIFFTags.GeoKeyDirectoryTag);
+ndvi_temp_rad_pre_sum(abs(ndvi_temp_rad_pre_sum_t)<tz)=NaN;
+filename=[result,'ͨ  T    ndvi_temp_rad_pre.tif'];
+geotiffwrite(filename,ndvi_temp_rad_pre_sum,R,'GeoKeyDirectoryTag',info.GeoTIFFTags.GeoKeyDirectoryTag);

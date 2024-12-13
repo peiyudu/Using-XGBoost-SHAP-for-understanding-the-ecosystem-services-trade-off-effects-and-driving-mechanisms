@@ -1,0 +1,25 @@
+library(ggplot2)
+library(corrplot)
+library(ggpubr)
+library(Hmisc)
+library(ppcor)   #执行偏相关所需的R包ppcor
+setwd("H:/NEWES/2000QX")
+ES<-read.csv("2000ES.csv")
+head(ES)
+pc<-pcor(ES,method = "pearson")
+uu<-pc$estimate   #计算偏相关系数
+pp<-pc$p.value    #计算显著性P值
+#将偏相关系数和p值转化为矩阵
+rcoe<-as.matrix(uu)
+pvalue<-as.matrix(pp)
+library(RColorBrewer)
+COL1(sequential = c("Oranges","Purples","Reds","Blues","Greens"
+,"Greys","OrRd","YlOrRd","YlOrBr","YlGn"),n=200)
+COL2(diverging = c("RdBu","BrBG","PiYG","PRGn","PuOr","RdYlBu"),n=200)
+corrplot(rcoe,method = "number",type = "upper",tl.pos = "d",tl.cex = 0.6,tl.srt = 45,tl.col="black",tl.offset = 12,
+cl.pos = "b",cl.ratio = 0.3,cl.cex = 0.55,number.cex =0.95,
+col=COL2("RdBu",8))
+corrplot(rcoe,method = "circle",type = "lower",add = T,
+tl.pos = "n",cl.pos = "n",diag = F,p.mat = pvalue,sig.level = c(0.001,0.01,0.05),
+pch.cex = 0.9,insig = "label_sig",col=COL2("RdBu",8)
+)

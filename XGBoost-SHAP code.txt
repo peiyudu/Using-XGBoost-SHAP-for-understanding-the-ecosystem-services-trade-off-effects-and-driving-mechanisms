@@ -1,0 +1,70 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_squared_error
+import shap
+import warnings
+
+warnings.filterwarnings("ignore")
+# 设置Matplotlib的字体属性
+plt.rcParams['font.sans-serif'] = ['SimHei']  # 用于中文显示
+plt.rcParams['axes.unicode_minus'] = False  # 正常显示负号
+
+# 1. 读取 CSV 文件，并指定编码格式
+csv_file = "D:/000-2024/00-00-01/02/2020-new.csv"
+df = pd.read_csv(csv_file, encoding='gbk')
+
+feature_columns = ['Dem', 'Land', 'Build', 'Slope', 'Soil','NDVI',  'Tem', 'Pre', 'Pop','Landforms', 'GDP']
+target_column = 'SC-HQ'
+df.dropna(subset=[*feature_columns, target_column], inplace=True)
+X = df[feature_columns]  # 选择特征列
+Y = df[target_column]    # 选择目标列
+
+# 4. 特征选择（使用随机森林的特征重要性）
+rf = RandomForestRegressor(n_estimators=100, random_state=42)
+rf.fit(X, Y)
+
+# 划分训练集和测试集
+X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=0.2, random_state=42)
+
+# 随机森林回归预测
+rf_final = RandomForestRegressor(n_estimators=100, random_state=42)
+rf_final.fit(X_train, y_train)
+y_pred = rf_final.predict(X_test)
+mse = mean_squared_error(y_test, y_pred)
+print(f"Mean Squared Error: {mse}")
+
+# 计算SHAP值
+explainer = shap.TreeExplainer(rf_final)  # 使用训练好的模型
+shap_values = explainer.shap_values(X_test)
+
+# 可视化SHAP值
+shap.summary_plot(shap_values, X_test)
+
+# 依赖图
+shap.dependence_plot("Dem", shap_values, X_test, interaction_index=None)
+plt.show()
+
+# 创建SHAP解释对象并绘制热图
+shap_explanation = shap.Explanation(values=shap_values,
+                                     base_values=explainer.expected_value,
+                                     data=X_test, feature_names=X.columns)  # 使用X_test
+shap.plots.heatmap(shap_explanation)
+
+# 计算交互SHAP值并绘制总结图
+shap_interaction_values = explainer.shap_interaction_values(X_test)  # 使用X_test
+shap.summary_plot(shap_interaction_values, X_test)
+
+# 聚类并绘制SHAP值的条形图
+clustering = shap.utils.hclust(X_test, y_test)  # 使用X_test和y_test
+shap.plots.bar(shap_values,
+                clustering=clustering,
+                clustering_cutoff=0.5)
+
+# 绘制单个样本的SHAP解释（Force Plot）
+sample_index = 0  # 选择一个样本索引进行解释
+shap.force_plot(explainer.expected_value, shap_values[sample_index], X_test.iloc[sample_index], matplotlib=True)
+plt.show()
