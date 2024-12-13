@@ -1,11 +1,16 @@
 # 简介
-本项目是XXXX的项目，使用的是XXXX的算法。
+This project is Using XGBoost-SHAP for understanding the ecosystem services trade-off effects and driving mechanisms in ecologically fragile areas, using the XGBoost-SHAP algorithm.
 # 环境
-- XXX
-- XXX
+ pandas 
+ numpy 
+ matplotlib
+ seaborn 
+ sklearn
+ shap
+ warnings
 # 运行
 ```
-xxxx
+pycharm
 ```
 # 数据说明
 ```
